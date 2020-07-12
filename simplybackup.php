@@ -377,6 +377,7 @@ class simplyBackup extends phpcli
                 exec($cmd);
                 
                 $cmd = 'openssl enc -aes-256-ecb -pbkdf2 -e -k ' . $storageKeyCrypt . ' -in ' . $this->dirApp['tmpBackup'] . $name . '.tar.' . $extension . ' -out ' . $storageLocation . $nameBackup . '/' . $dirEncryptedFile;
+                $cmd = 'openssl enc -aes-256-ecb -e -k ' . $storageKeyCrypt . ' -in ' . $this->dirApp['tmpBackup'] . $name . '.tar.' . $extension . ' -out ' . $storageLocation . $nameBackup . '/' . $dirEncryptedFile;
                 exec($cmd);
                 echo $cmd . "\n";
             }
