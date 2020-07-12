@@ -1,0 +1,12 @@
+<?php
+$config['test'] = [
+    'toBackup' => [
+        'location' => 'Absulte path'
+    ],
+    'storage' => [
+        'type'=>'local',
+        'location' => 'Absulte path',
+        'keyCrypt' => 'Strong key',
+        'retention' => '1w/1d-1m/1w-1y/1m',
+    ],
+];
