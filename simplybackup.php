@@ -63,6 +63,11 @@ class simplyBackup extends phpcli
         {
             $dbFiles = [];
         }
+        $dbFilesInGroup = $this->loadFile($this->dirApp['db'] . $nameBackup . '_Groups.db',$storageKeyCrypt);
+        if (!is_array($dbFilesInGroup) or !$dbFilesInGroup)
+        {
+            $dbFilesInGroup = [];
+        }
         $dbBackup = $this->loadFile($this->dirApp['db'] . $nameBackup . '_Backup.db',$storageKeyCrypt);
         if (!is_array($dbBackup) or !$dbBackup)
         {
@@ -78,11 +83,12 @@ class simplyBackup extends phpcli
         
         // saveFile($dirDb . $nameBackup . '_Backup.db',$dbBackup,$storageKeyCrypt);
         $dbFiles = $this->doUpdateDbFiles($idBackup,$dbFiles,$toBackupLocation);
-        list($filesToBackup,$dbFiles) = $this->makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation);
+        list($filesToBackup,$dbFilesInGroup) = $this->makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation,$dbFilesInGroup);
         // print_r($dbFiles);
         // $this->runBackup($filesToBackup,$idBackup,$storageKeyCrypt,$storageLocation,$nameBackup);
         $this->saveFile($this->dirApp['db'] . $nameBackup . '_Files.db',$dbFiles,$storageKeyCrypt);
         $this->saveFile($this->dirApp['db'] . $nameBackup . '_Backup.db',$dbBackup,$storageKeyCrypt);
+        $this->saveFile($this->dirApp['db'] . $nameBackup . '_Groups.db',$dbFilesInGroup,$storageKeyCrypt);
     }
     
     function doUpdateDbFiles($idBackup,$dbFiles,$toBackupLocation)
@@ -213,7 +219,7 @@ class simplyBackup extends phpcli
         return $dbFiles;
     }
     
-    function makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation)
+    function makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation,$dbFilesInGroup)
     {
         $listExtension['C1'] = 'exe,iso,img';
         $listExtension['C2'] = 'avi,mov,mpg,mpa,vob,mp3,mp4,jpeg,jpg,png,gif,tif,svg,bmp';
@@ -264,11 +270,11 @@ class simplyBackup extends phpcli
             $size[$groupExt] += basename($stateFile);
             
             $filesToBackup[$groupExt][$idGroup[$groupExt]][] = str_replace('/',$this->dirSep,$toBackupLocation . $nameFile);
-            $tmpDbFiles[$nameFile][$idBackup] = $stateFile . '/' . $idGroup[$groupExt];
+            $dbFilesInGroup[$nameFile][$idBackup] = $idGroup[$groupExt];
         }
         // print_r($filesToBackup);
         // print_r($tmpDbFiles);
-        return [$filesToBackup,$tmpDbFiles];
+        return [$filesToBackup,$dbFilesInGroup];
     }
     
     function applyRetentionBackup($dbBackup,$retention)
