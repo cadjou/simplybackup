@@ -79,9 +79,9 @@ class simplyBackup extends phpcli
         // saveFile($dirDb . $nameBackup . '_Backup.db',$dbBackup,$storageKeyCrypt);
         $dbFiles = $this->doUpdateDbFiles($idBackup,$dbFiles,$toBackupLocation);
         list($filesToBackup,$dbFiles) = $this->makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation);
-        print_r($dbFiles);
-        $this->runBackup($filesToBackup,$idBackup,$storageKeyCrypt,$storageLocation,$nameBackup);
-        
+        // print_r($dbFiles);
+        $this->saveFile($this->dirApp['db'] . $nameBackup . '_Files.db',$dbFiles,$storageKeyCrypt);
+        $this->saveFile($this->dirApp['db'] . $nameBackup . '_Backup.db',$dbBackup,$storageKeyCrypt);
     }
     
     function doUpdateDbFiles($idBackup,$dbFiles,$toBackupLocation)
