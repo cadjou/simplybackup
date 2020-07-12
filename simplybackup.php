@@ -57,7 +57,6 @@ class simplyBackup extends phpcli
         $storageLocation   = rtrim(str_replace('\\','/',$data['storage'] ['location']),'/') . '/';
         $storageKeyCrypt   = $data['storage'] ['keyCrypt'];
         $sizeGroup         = 50000000;
-        $sizeGroup         = 500;
         
         $dbFiles = $this->loadFile($this->dirApp['db'] . $nameBackup . '_Files.db',$storageKeyCrypt);
         if (!is_array($dbFiles))
@@ -81,7 +80,7 @@ class simplyBackup extends phpcli
         $dbFiles = $this->doUpdateDbFiles($idBackup,$dbFiles,$toBackupLocation);
         list($filesToBackup,$dbFiles) = $this->makeGroupFiles($dbFiles,$sizeGroup,$toBackupLocation);
         print_r($dbFiles);
-        $this->runBackup($filesToBackup);
+        $this->runBackup($filesToBackup,$idBackup,$storageKeyCrypt,$storageLocation,$nameBackup);
         
     }
     
@@ -258,12 +257,12 @@ class simplyBackup extends phpcli
 
             if (!isset($idGroup[$groupExt]) or !isset($size[$groupExt]) or $size[$groupExt] > $sizeGroup)
             {
-                $idGroup[$groupExt] = uniqid('',true);
+                $idGroup[$groupExt] = uniqid($idBackup . '_',true);
                 $size[$groupExt]    = 0;
             }
             $size[$groupExt] += basename($stateFile);
             
-            $filesToBackup[$groupExt][$idGroup[$groupExt]][] = str_replace('/','\\',$toBackupLocation . $nameFile);
+            $filesToBackup[$groupExt][$idGroup[$groupExt]][] = str_replace('/',$this->dirSep,$toBackupLocation . $nameFile);
             $tmpDbFiles[$nameFile][$idBackup] = $stateFile . '/' . $idGroup[$groupExt];
         }
         // print_r($filesToBackup);
@@ -347,18 +346,39 @@ class simplyBackup extends phpcli
         return $newBackup;
     }
     
-    function runBackup($filesToBackup)
+    function runBackup($filesToBackup,$idBackup,$storageKeyCrypt,$storageLocation,$nameBackup)
     {
+        $compressionType['C1'] = 'gzip -3';
+        $compressionType['C2'] = 'gzip -7';
+        $compressionType['C3'] = 'xz -9';
+        $extensionType['C1'] = 'gz';
+        $extensionType['C2'] = 'gz';
+        $extensionType['C3'] = 'xz';
         foreach($filesToBackup as $type=>$groupFiles)
         {
+            $compres   = isset($compressionType[$type]) ? $compressionType[$type] : 'gzip -3' ;
+            $extension = isset($extensionType[$type])   ? $extensionType[$type]   : 'gz' ;
             foreach($groupFiles as $name=>$listFiles)
             {
                 $listFilesForText      = implode("\n",$listFiles);
                 $pathListFilesTobackup = uniqid($this->dirApp['tmpList'] . 'files_to_back_up_') . '.txt';
                 file_put_contents($pathListFilesTobackup,$listFilesForText);
-                $cmd = 'tar -I \'xz -9\' -c -T ' . $pathListFilesTobackup . ' --same-owner -H posix -f ' . uniqid($this->dirApp['tmpBackup']) . '.tar.gz';
+                $cmd = 'tar -I \'' . $compres . '\' -c -T ' . $pathListFilesTobackup . ' --same-owner -H posix -f ' . $this->dirApp['tmpBackup'] . $name . '.tar.' . $extension;
                 echo $cmd . "\n";
                 exec($cmd);
+                $nameDirEncrypted = str_replace(['/','='],[',,','__'],openssl_encrypt(gzcompress($name . '.tar.' . $extension,9), "AES-256-ECB" ,$storageKeyCrypt));
+                $dirEncryptedFile = implode('/',str_split($nameDirEncrypted,15));
+                if (basename($dirEncryptedFile) < 5)
+                {
+                    $dirEncryptedFile = implode('/',str_split($nameDirEncrypted,10));
+                }
+                $tDir = dirname($dirEncryptedFile);
+                $cmd  = 'mkdir -p ' . $storageLocation . $nameBackup . '/' . $tDir;
+                exec($cmd);
+                
+                $cmd = 'openssl enc -aes-256-ecb -pbkdf2 -e -k ' . $storageKeyCrypt . ' -in ' . $this->dirApp['tmpBackup'] . $name . '.tar.' . $extension . ' -out ' . $storageLocation . $nameBackup . '/' . $dirEncryptedFile;
+                exec($cmd);
+                echo $cmd . "\n";
             }
         }
     }
