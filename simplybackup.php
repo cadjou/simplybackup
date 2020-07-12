@@ -252,7 +252,7 @@ class simplyBackup extends phpcli
             $dirName   = $infoFile['dirname'];
             $dirName   = $dirName == '.' ? '' : $dirName;
             $baseName  = $infoFile['basename'];
-            $extension = $infoFile['extension'];
+            $extension = isset($infoFile['extension']) ? $infoFile['extension'] : '';
             $groupExt  = isset($tableExtension[$extension]) ? $tableExtension[$extension] : 'C1' ;
 
             if (!isset($idGroup[$groupExt]) or !isset($size[$groupExt]) or $size[$groupExt] > $sizeGroup)
